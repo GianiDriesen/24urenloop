@@ -1,0 +1,225 @@
+package be.industria.industria24u.industria24u;
+
+import android.content.Context;
+import android.content.Intent;
+import android.os.AsyncTask;
+import android.os.Bundle;
+import android.support.annotation.NonNull;
+import android.support.design.widget.NavigationView;
+import android.support.design.widget.Snackbar;
+import android.support.v4.view.GravityCompat;
+import android.support.v4.widget.DrawerLayout;
+import android.support.v7.app.ActionBarDrawerToggle;
+import android.support.v7.app.AppCompatActivity;
+import android.support.v7.widget.Toolbar;
+import android.view.ContextMenu;
+import android.view.ContextMenu.ContextMenuInfo;
+import android.view.LayoutInflater;
+import android.view.MenuInflater;
+import android.view.MenuItem;
+import android.view.View;
+import android.view.View.OnCreateContextMenuListener;
+import android.widget.ExpandableListView;
+import android.widget.ExpandableListView.OnChildClickListener;
+import android.widget.ExpandableListView.ExpandableListContextMenuInfo;
+import android.widget.Toast;
+
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.LinkedList;
+import java.util.List;
+
+import be.industria.industria24u.industria24u.editors.AdminRunnerQueueAddPerson;
+import be.industria.industria24u.industria24u.navigation.AdminNavigationListener;
+import entity.Person;
+
+// Nothing suspicious here...
+@SuppressWarnings("UnusedParameters, SuspiciousMethodCalls")
+public class AdminRunnerQueueActivity extends AppCompatActivity implements OnChildClickListener, OnCreateContextMenuListener {
+    private SingletonApplication app;
+    private DrawerLayout drawer;
+    private ExpandableAdapter adapter;
+    private ExpandableListView listView;
+    private List<Object> parents;
+    private HashMap<Object, List<String>> relations;
+    private HashMap<Person, Integer> queue;
+    private Person person;
+
+    @Override
+    protected void onCreate(Bundle savedInstanceState) {
+        super.onCreate(savedInstanceState);
+        app = (SingletonApplication) this.getApplication();
+        setContentView(R.layout.admin_runnerqueue_container);
+        parents = new ArrayList<>();
+        relations = new HashMap<>();
+        setupViews();
+        app.getEntityMapper().getpMapper().getRunnerQueue();
+        new GetRunnerQueue().execute();
+    }
+
+    private void setupViews() {
+        Toolbar toolbar = (Toolbar) findViewById(R.id.admin_runnerqueue_toolbar);
+        if (getSupportActionBar() == null) {
+            setSupportActionBar(toolbar);
+        }
+
+        drawer = (DrawerLayout) findViewById(R.id.admin_runnerqueue_container);
+        ActionBarDrawerToggle toggle = new ActionBarDrawerToggle(this, drawer, toolbar, R.string.navigation_drawer_open, R.string.navigation_drawer_close);
+        drawer.addDrawerListener(toggle);
+        toggle.syncState();
+
+        NavigationView navigationView = (NavigationView) findViewById(R.id.admin_runnerqueue_nav);
+        navigationView.setNavigationItemSelectedListener(new NavListener(this.getApplicationContext()));
+
+        listView = (ExpandableListView) findViewById(R.id.admin_runnerqueue_list);
+        listView.setGroupIndicator(null);
+        listView.setLongClickable(true);
+        registerForContextMenu(listView);
+    }
+
+    private void displayQueue(List<Person> runners) {
+        if (!runners.isEmpty()) {
+            for (Person p:runners) {
+                List<String> fields = p.getExportableFieldsForQueue();
+                parents.add(p);
+                relations.put(p, fields);
+            }
+            adapter = new ExpandableAdapter(relations, parents);
+            adapter.setInflater((LayoutInflater) getSystemService(Context.LAYOUT_INFLATER_SERVICE), this);
+            listView.setAdapter(adapter);
+            listView.setOnChildClickListener(this);
+        }
+        else {
+            Toast.makeText(app.getApplicationContext(), "There are no persons in the runnerqueue", Toast.LENGTH_LONG).show();
+        }
+    }
+
+    private class GetRunnerQueue extends AsyncTask<Void, Void, List<Person>> {
+        protected List<Person> doInBackground(Void... voids) {
+            List<Person> runners = new LinkedList<>();
+            while (!app.getEntityMapper().dataReady()) {
+                if (isCancelled()) break;
+            }
+            if (app.getEntityMapper().dataReady()) {
+                runners = app.getEntityMapper().persons;
+                queue = app.getEntityMapper().runnerQueue;
+                app.getEntityMapper().dataGrabbed();
+            }
+            return runners;
+        }
+
+        protected void onPostExecute(List<Person> runners) {
+            displayQueue(runners);
+        }
+    }
+
+    @Override
+    public boolean onChildClick(ExpandableListView expandableListView, View view, int i, int i1, long l) {
+        return false;
+    }
+
+    @Override
+    public void onCreateContextMenu(ContextMenu menu, View v, ContextMenuInfo menuInfo) {
+        super.onCreateContextMenu(menu, v, menuInfo);
+        MenuInflater inflater = getMenuInflater();
+        inflater.inflate(R.menu.admin_remove_up_down, menu);
+    }
+
+    @Override
+    public boolean onContextItemSelected(MenuItem item) {
+        ExpandableListContextMenuInfo info = (ExpandableListContextMenuInfo) item.getMenuInfo();
+        person = (Person) adapter.getGroup((int) info.id);
+        switch (item.getItemId()) {
+            case R.id.action_moveDown:
+                moveDown((int) info.id);
+                return true;
+            case R.id.action_moveUp:
+                moveUp((int) info.id);
+                return true;
+            case R.id.action_delete:
+                delete((int) info.id, person);
+                return true;
+            default:
+                return super.onContextItemSelected(item);
+        }
+    }
+
+    private void delete(int positionInQueue, Person runner) {
+        if (positionInQueue == 0) {
+            Toast.makeText(app.getApplicationContext(), "Can't edit, person is running!", Toast.LENGTH_LONG).show();
+        } else {
+            Snackbar deleteSnack = Snackbar.make(findViewById(R.id.admin_runnerqueue_coordinator), "Are you sure you want to delete "+runner.getFirstName()+"?", Snackbar.LENGTH_LONG);
+            deleteSnack.setAction(R.string.confirm, new DeleteListener(positionInQueue));
+            deleteSnack.show();
+        }
+    }
+
+    private void moveUp(int positionInQueue) {
+        if (positionInQueue == 0) {
+            Toast.makeText(app.getApplicationContext(), "Can't edit, person is running!", Toast.LENGTH_LONG).show();
+        }
+        else if (positionInQueue == 1) {
+            Toast.makeText(app.getApplicationContext(), "Moving this person up isn't possible!", Toast.LENGTH_LONG).show();
+        } else {
+            // First, swap things in the DB
+            Toast.makeText(app.getApplicationContext(), "Swapping "+parents.get(positionInQueue).toString()+" and "+parents.get(positionInQueue-1).toString(), Toast.LENGTH_SHORT).show();
+            app.getEntityMapper().getpMapper().swapRunners(queue.get(parents.get(positionInQueue)), queue.get(parents.get(positionInQueue-1)));
+            // Then, swap things in this view.
+            Collections.swap(parents, positionInQueue, positionInQueue-1);
+            adapter.notifyDataSetChanged();
+        }
+    }
+
+    private void moveDown(int positionInQueue) {
+        if (positionInQueue == 0) {
+            Toast.makeText(app.getApplicationContext(), "Can't edit, person is running!", Toast.LENGTH_LONG).show();
+        }
+        else if (positionInQueue == parents.size()-1){
+            Toast.makeText(app.getApplicationContext(), "Moving this person down isn't possible!", Toast.LENGTH_LONG).show();
+        }
+        else {
+            // First, swap things in the DB
+            Toast.makeText(app.getApplicationContext(), "Swapping "+parents.get(positionInQueue).toString()+" and "+parents.get(positionInQueue+1).toString(), Toast.LENGTH_SHORT).show();
+            app.getEntityMapper().getpMapper().swapRunners(queue.get(parents.get(positionInQueue)), queue.get(parents.get(positionInQueue+1)));
+            // Then, swap things in this view.
+            Collections.swap(parents, positionInQueue, positionInQueue+1);
+            adapter.notifyDataSetChanged();
+        }
+    }
+
+    public void addRunnerToQ(View v) {
+        Intent createIntent = new Intent(AdminRunnerQueueActivity.this, AdminRunnerQueueAddPerson.class);
+        startActivity(createIntent);
+    }
+
+    @SuppressWarnings("SuspiciousMethodCalls")
+    public class DeleteListener implements View.OnClickListener {
+        private int qid;
+        DeleteListener(int id) { this.qid = id; }
+        @Override
+        public void onClick(View v) {
+            // First, delete runner from queue in the DB
+            app.getEntityMapper().getpMapper().deleteRunner(queue.get(parents.get(qid)));
+            // Then, remove it from the view here.
+            parents.remove(person);
+            relations.remove(person);
+            adapter.notifyDataSetChanged();
+        }
+    }
+
+    private class NavListener extends AdminNavigationListener {
+        public NavListener(Context context) {
+            super(context);
+        }
+
+        @Override
+        public boolean onNavigationItemSelected(@NonNull MenuItem item) {
+            super.onNavigationItemSelected(item);
+            //finish();
+            startActivity(super.resultIntent);
+            drawer.closeDrawer(GravityCompat.START);
+            return true;
+        }
+    }
+}

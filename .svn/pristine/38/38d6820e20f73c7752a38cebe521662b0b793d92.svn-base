@@ -1,0 +1,171 @@
+package be.industria.industria24u.industria24u.editors;
+
+import android.content.Context;
+import android.content.Intent;
+import android.os.AsyncTask;
+import android.os.Bundle;
+import android.support.annotation.NonNull;
+import android.support.design.widget.NavigationView;
+import android.support.v4.view.GravityCompat;
+import android.support.v4.widget.DrawerLayout;
+import android.support.v7.app.ActionBarDrawerToggle;
+import android.support.v7.app.AppCompatActivity;
+import android.support.v7.widget.Toolbar;
+import android.view.MenuItem;
+import android.view.View;
+import android.widget.EditText;
+import android.widget.Toast;
+
+import java.util.LinkedList;
+import java.util.List;
+
+import be.industria.industria24u.industria24u.AdminRunnerQueueActivity;
+import be.industria.industria24u.industria24u.R;
+import be.industria.industria24u.industria24u.SingletonApplication;
+import be.industria.industria24u.industria24u.navigation.AdminNavigationListener;
+import entity.Person;
+
+@SuppressWarnings("UnusedParameters")
+public class AdminRunnerQueueAddPerson extends AppCompatActivity {
+    private SingletonApplication app;
+    private DrawerLayout drawer;
+    private EditText runnerFirstName;
+    private EditText runnerLastName;
+    private EditText runnerEmail;
+    private Intent intent;
+
+    @Override
+    protected void onCreate(Bundle savedInstanceState) {
+        super.onCreate(savedInstanceState);
+        setContentView(R.layout.admin_runnerqueue_add_runner_container);
+        app = (SingletonApplication) this.getApplication();
+        setupViews();
+        intent = new Intent(this, AdminRunnerQueueActivity.class);
+    }
+
+    private void setupViews() {
+        Toolbar toolbar = (Toolbar) findViewById(R.id.admin_runnerqueue_add_runner_toolbar);
+        if (getSupportActionBar() == null) {
+            setSupportActionBar(toolbar);
+        }
+
+        drawer = (DrawerLayout) findViewById(R.id.admin_runnerqueue_add_runner_container);
+        ActionBarDrawerToggle toggle = new ActionBarDrawerToggle(this, drawer, toolbar, R.string.navigation_drawer_open, R.string.navigation_drawer_close);
+        drawer.addDrawerListener(toggle);
+        toggle.syncState();
+
+        NavigationView navigationView = (NavigationView) findViewById(R.id.admin_runnerqueue_add_runner_nav);
+        navigationView.setNavigationItemSelectedListener(new NavListener(this.getApplicationContext()));
+
+        runnerFirstName = (EditText) findViewById(R.id.runnerFirstName);
+        runnerLastName = (EditText) findViewById(R.id.runnerLastName);
+        runnerEmail = (EditText) findViewById(R.id.runnerEMail);
+    }
+
+    public void addRunnerToQueue(View v) {
+        if (!runnerEmail.getText().toString().equals("") && !runnerEmail.getText().toString().equals("null")) {
+            app.getEntityMapper().getpMapper().getPersonByEmail(runnerEmail.getText().toString());
+            new GetRunner().execute();
+        }
+        else {
+            app.getEntityMapper().getpMapper().getPersonsByName(runnerFirstName.getText().toString(), runnerLastName.getText().toString());
+            new GetRunners().execute();
+        }
+    }
+
+    private class GetRunner extends AsyncTask<Void, Void, Person> {
+        protected Person doInBackground(Void... voids) {
+            Person person = new Person();
+            while (!app.getEntityMapper().dataReady()) {
+                if (isCancelled()) break;
+            }
+            if (app.getEntityMapper().dataReady()) {
+                person = app.entityMapper.person;
+                app.getEntityMapper().dataGrabbed();
+            }
+            return person;
+        }
+
+        protected void onPostExecute(Person person) {
+            if (person != null) {
+                app.getEntityMapper().getpMapper().insertRunnerQueue(person.getId());
+                Toast.makeText(app.getApplicationContext(), person.getFirstName()+" added to the Queue!", Toast.LENGTH_SHORT).show();
+                startActivity(intent);
+                finish();
+            }
+            else {
+                Toast.makeText(app.getApplicationContext(), "Person with that e-mail doesn't exist.", Toast.LENGTH_SHORT).show();
+            }
+        }
+    }
+
+    private class GetRunners extends AsyncTask<Void, Void, List<Person>> {
+        protected List<Person> doInBackground(Void... voids) {
+            List<Person> persons = new LinkedList<>();
+            while (!app.getEntityMapper().dataReady()) {
+                if (isCancelled()) break;
+            }
+            if (app.getEntityMapper().dataReady()) {
+                persons = app.entityMapper.persons;
+                app.getEntityMapper().dataGrabbed();
+            }
+            return persons;
+        }
+
+        protected void onPostExecute(List<Person> persons) {
+            if (persons.size()==1) {
+                Person person = persons.get(0);
+                app.getEntityMapper().getpMapper().insertRunnerQueue(person.getId());
+                Toast.makeText(app.getApplicationContext(), person.getFirstName()+" added to the Queue!", Toast.LENGTH_SHORT).show();
+                startActivity(intent);
+                finish();
+            } else if (persons.size()==0) {
+                Toast.makeText(app.getApplicationContext(), "Person with that name doesn't exist.", Toast.LENGTH_SHORT).show();
+            } else {
+                Toast.makeText(app.getApplicationContext(), "There are multiple persons with this name. Try to fill in the runners e-mail adress", Toast.LENGTH_SHORT).show();
+            }
+        }
+    }
+
+    public void addAllPersonstoRunnerqueue(View v) {
+        app.getEntityMapper().getpMapper().getPersons();
+        new GetAllRunners().execute();
+    }
+
+    private class GetAllRunners extends AsyncTask<Void, Void, List<Person>> {
+        protected List<Person> doInBackground(Void... voids) {
+            List<Person> persons = new LinkedList<>();
+            while (!app.getEntityMapper().dataReady()) {
+                if (isCancelled()) break;
+            }
+            if (app.getEntityMapper().dataReady()) {
+                persons = app.entityMapper.persons;
+                app.getEntityMapper().dataGrabbed();
+            }
+            return persons;
+        }
+
+        protected void onPostExecute(List<Person> persons) {
+            for (Person p:persons) {
+                app.getEntityMapper().getpMapper().insertRunnerQueue(p.getId());
+            }
+            startActivity(intent); // TODO: This might immediately go to the activity, even before all persons are inserted.
+            finish();
+        }
+    }
+
+    private class NavListener extends AdminNavigationListener {
+        public NavListener(Context context) {
+            super(context);
+        }
+
+        @Override
+        public boolean onNavigationItemSelected(@NonNull MenuItem item) {
+            super.onNavigationItemSelected(item);
+            //finish();
+            startActivity(super.resultIntent);
+            drawer.closeDrawer(GravityCompat.START);
+            return true;
+        }
+    }
+}

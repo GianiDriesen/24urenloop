@@ -1,0 +1,234 @@
+<?xml version="1.0" encoding="utf-8"?>
+<manifest xmlns:android="http://schemas.android.com/apk/res/android"
+    package="be.industria.industria24u.industria24u">
+
+    <uses-permission android:name="android.permission.INTERNET" />
+
+    <application
+        android:name="be.industria.industria24u.industria24u.SingletonApplication"
+        android:allowBackup="true"
+        android:icon="@mipmap/ic_nav"
+        android:label="@string/app_name"
+        android:supportsRtl="false">
+        <meta-data
+            android:name="com.facebook.sdk.ApplicationId"
+            android:value="@string/facebook_app_id" />
+
+        <activity android:name=".LoginListActivity"
+            android:label="@string/app_name"
+            android:theme="@style/AppTheme.NoActionBar"
+            android:noHistory="false"
+            android:screenOrientation="portrait">
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN" />
+                <category android:name="android.intent.category.LAUNCHER" />
+            </intent-filter>
+        </activity>
+        <activity
+            android:name=".StartActivity"
+            android:label="@string/app_name"
+            android:theme="@style/AppTheme.NoActionBar"
+            android:noHistory="true"
+            android:screenOrientation="portrait"/>
+        <activity
+            android:name=".RegistrationActivity"
+            android:label="@string/title_activity_registration"
+            android:theme="@style/AppTheme.NoActionBar"
+            android:noHistory="true"/>
+        <activity
+            android:name=".AdminRunnerQueueActivity"
+            android:label="Runnerqueue"
+            android:theme="@style/AppTheme.NoActionBar"
+            android:noHistory="true" />
+        <activity
+            android:name=".AdminRunnersActivity"
+            android:label="Runners"
+            android:theme="@style/AppTheme.NoActionBar"
+            android:noHistory="true" />
+        <activity
+            android:name=".AdminTeamsActivity"
+            android:label="Teams"
+            android:theme="@style/AppTheme.NoActionBar"
+            android:noHistory="true" />
+        <activity
+            android:name=".AdminLapHistoryActivity"
+            android:label="Laps (newest first)"
+            android:theme="@style/AppTheme.NoActionBar"
+            android:noHistory="true" />
+        <activity
+            android:name=".AdminAchievementsActivity"
+            android:label="Achievements"
+            android:theme="@style/AppTheme.NoActionBar"
+            android:noHistory="true" />
+        <activity
+            android:name=".AdminPrizesActivity"
+            android:label="Prizes"
+            android:theme="@style/AppTheme.NoActionBar"
+            android:noHistory="true" />
+        <activity
+            android:name=".AdminTrainingsActivity"
+            android:label="Trainings"
+            android:theme="@style/AppTheme.NoActionBar"
+            android:noHistory="true" />
+        <activity
+            android:name=".AdminChronometerActivity"
+            android:label="Chronometer"
+            android:theme="@style/AppTheme.NoActionBar"
+            android:noHistory="true" />
+        <activity
+            android:name=".RunnerAchievementsActivity"
+            android:label="Achievements"
+            android:theme="@style/AppTheme.NoActionBar"
+            android:noHistory="true"/>
+        <activity
+            android:name=".RunnerLapHistoryActivity"
+            android:label="Laps (newest first)"
+            android:theme="@style/AppTheme.NoActionBar"
+            android:noHistory="true"/>
+        <activity
+            android:name=".RunnerMyProfileEditActivity"
+            android:label="Edit My Profile"
+            android:theme="@style/AppTheme.NoActionBar"
+            android:noHistory="true"/>
+        <activity
+            android:name=".RunnerMyProfileStaticActivity"
+            android:label="My Profile"
+            android:theme="@style/AppTheme.NoActionBar"
+            android:noHistory="true"/>
+        <activity
+            android:name=".RunnerPrizesActivity"
+            android:label="Prizes"
+            android:theme="@style/AppTheme.NoActionBar"
+            android:noHistory="true"/>
+        <activity
+            android:name=".RunnerDashboardActivity"
+            android:label="Dashboard"
+            android:theme="@style/AppTheme.NoActionBar"
+            android:noHistory="false"/>
+        <activity
+            android:name=".RunnerStatisticsActivity"
+            android:label="Statistics"
+            android:theme="@style/AppTheme.NoActionBar"
+            android:noHistory="true"/>
+        <activity
+            android:name=".RunnerTeamsActivity"
+            android:label="Teams"
+            android:theme="@style/AppTheme.NoActionBar"
+            android:noHistory="true"/>
+        <activity
+            android:name=".RunnerTrainingsActivity"
+            android:label="Trainings"
+            android:theme="@style/AppTheme.NoActionBar"
+            android:noHistory="true"/>
+        <activity
+            android:name=".editors.AdminRunnerEditActivity"
+            android:label="Edit Runner"
+            android:theme="@style/AppTheme.NoActionBar"
+            android:noHistory="true" />
+        <activity
+            android:name=".editors.AdminRunnerCreateActivity"
+            android:label="Create new Runner"
+            android:theme="@style/AppTheme.NoActionBar"
+            android:noHistory="true" />
+        <activity
+            android:name=".editors.AdminTeamEditActivity"
+            android:label="Edit Team"
+            android:theme="@style/AppTheme.NoActionBar"
+            android:noHistory="true" />
+        <activity
+            android:name=".editors.AdminTeamCreateActivity"
+            android:label="Create new Team"
+            android:theme="@style/AppTheme.NoActionBar"
+            android:noHistory="true" />
+        <activity
+            android:name=".editors.AdminAchievementCreateActivity"
+            android:label="Create new Achievement"
+            android:theme="@style/AppTheme.NoActionBar"
+            android:noHistory="true" />
+        <activity
+            android:name=".editors.AdminAchievementEditActivity"
+            android:label="Edit Achievement"
+            android:theme="@style/AppTheme.NoActionBar"
+            android:noHistory="true" />
+        <activity
+            android:name=".editors.AdminPrizeCreateActivity"
+            android:label="Create new Prize"
+            android:theme="@style/AppTheme.NoActionBar"
+            android:noHistory="true" />
+        <activity
+            android:name=".editors.AdminPrizeEditActivity"
+            android:label="Edit Prize"
+            android:theme="@style/AppTheme.NoActionBar"
+            android:noHistory="true" />
+        <activity
+            android:name=".editors.AdminTrainingCreateActivity"
+            android:label="Create new Training"
+            android:theme="@style/AppTheme.NoActionBar"
+            android:noHistory="true" />
+        <activity
+            android:name=".editors.AdminTrainingEditActivity"
+            android:label="Edit Training"
+            android:theme="@style/AppTheme.NoActionBar"
+            android:noHistory="true" />
+        <activity
+            android:name=".editors.AdminRunnerQueueAddPerson"
+            android:label="Add Person to Queue"
+            android:theme="@style/AppTheme.NoActionBar"
+            android:noHistory="true" />
+        <activity
+            android:name=".editors.AdminLapCreateActivity"
+            android:label="Create new Lap"
+            android:theme="@style/AppTheme.NoActionBar"
+            android:noHistory="true" />
+        <activity
+            android:name=".editors.AdminLapEditActivity"
+            android:label="Edit Lap"
+            android:theme="@style/AppTheme.NoActionBar"
+            android:noHistory="true" />
+        <activity
+            android:name=".LogoutActivity"
+            android:label="Logout"
+            android:theme="@style/AppTheme.NoActionBar"
+            android:noHistory="true" />
+        <activity
+            android:name=".RunnerTeamsAddMemberActivity"
+            android:label="Add Member"
+            android:theme="@style/AppTheme.NoActionBar"
+            android:noHistory="true" />
+        <activity
+            android:name=".RunnerTeamsHasNoTeamActivity"
+            android:label="You don't have a Team..."
+            android:theme="@style/AppTheme.NoActionBar"
+            android:noHistory="true" />
+        <activity
+            android:name=".RunnerTeamsHasTeamActivity"
+            android:label="Welcome on your Teampage!"
+            android:theme="@style/AppTheme.NoActionBar"
+            android:noHistory="true" />
+
+        <!-- FB LOGIN -->
+        <activity
+            android:name="com.facebook.FacebookActivity"
+            android:configChanges="keyboard|keyboardHidden|screenLayout|screenSize|orientation"
+            android:label="@string/app_name" />
+        <activity
+            android:name="com.facebook.CustomTabActivity"
+            android:exported="true">
+            <intent-filter>
+                <action android:name="android.intent.action.VIEW" />
+                <category android:name="android.intent.category.DEFAULT" />
+                <category android:name="android.intent.category.BROWSABLE" />
+                <data android:scheme="@string/fb_login_protocol_scheme" />
+            </intent-filter>
+        </activity>
+
+        <!-- GOOGLE SIGNIN -->
+        <!-- ATTENTION: This was auto-generated to add Google Play services to your project for
+            App Indexing.  See https://g.co/AppIndexing/AndroidStudio for more information. -->
+        <meta-data
+            android:name="com.google.android.gms.version"
+            android:value="@integer/google_play_services_version" />
+
+    </application>
+
+</manifest>

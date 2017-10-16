@@ -1,0 +1,118 @@
+package be.industria.industria24u.industria24u;
+
+import android.content.Context;
+import android.os.AsyncTask;
+import android.os.Bundle;
+import android.support.annotation.NonNull;
+import android.support.design.widget.NavigationView;
+import android.support.v4.view.GravityCompat;
+import android.support.v4.widget.DrawerLayout;
+import android.support.v7.app.ActionBarDrawerToggle;
+import android.support.v7.app.AppCompatActivity;
+import android.support.v7.widget.Toolbar;
+import android.view.LayoutInflater;
+import android.view.MenuItem;
+import android.view.View;
+import android.widget.ExpandableListView;
+import android.widget.ExpandableListView.OnChildClickListener;
+import android.widget.Toast;
+
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.LinkedList;
+import java.util.List;
+
+import be.industria.industria24u.industria24u.navigation.RunnerNavigationListener;
+import entity.Achievement;
+
+public class RunnerAchievementsActivity extends AppCompatActivity implements OnChildClickListener {
+    private SingletonApplication app;
+    private DrawerLayout drawer;
+    private ExpandableListView listView;
+    private List<Object> parents;
+    private HashMap<Object, List<String>> relations;
+
+    @Override
+    protected void onCreate(Bundle savedInstanceState) {
+        super.onCreate(savedInstanceState);
+        setContentView(R.layout.runner_achievements_container);
+        app = (SingletonApplication) this.getApplication();
+        setupViews();
+        parents = new ArrayList<>();
+        relations = new HashMap<>();
+        app.getEntityMapper().getaMapper().getAchievementsByPerson(app.getUser()); // Get all achievements for this user
+        new GetAchievements().execute();
+    }
+
+    private void setupViews() {
+        Toolbar toolbar = (Toolbar) findViewById(R.id.runner_achievements_toolbar);
+        if (getSupportActionBar() == null) {
+            setSupportActionBar(toolbar);
+        }
+
+        drawer = (DrawerLayout) findViewById(R.id.runner_achievements_container);
+        ActionBarDrawerToggle toggle = new ActionBarDrawerToggle(this, drawer, toolbar, R.string.navigation_drawer_open, R.string.navigation_drawer_close);
+        drawer.addDrawerListener(toggle);
+        toggle.syncState();
+
+        NavigationView navigationView = (NavigationView) findViewById(R.id.runner_achievements_nav);
+        navigationView.setNavigationItemSelectedListener(new NavListener(this.getApplicationContext()));
+
+        listView = (ExpandableListView) findViewById(R.id.runner_achievement_list);
+        listView.setGroupIndicator(null);
+    }
+
+    private void displayData(List<Achievement> achievements) {
+        if (!achievements.isEmpty()) {
+            for (Achievement a:achievements) {
+                List<String> fields = a.getExportableFields();
+                parents.add(a);
+                relations.put(a, fields);
+            }
+            ExpandableAdapter adapter = new ExpandableAdapter(relations, parents);
+            adapter.setInflater((LayoutInflater) getSystemService(Context.LAYOUT_INFLATER_SERVICE), this);
+            listView.setAdapter(adapter);
+            listView.setOnChildClickListener(this);
+        } else {
+            Toast.makeText(app.getApplicationContext(), "You have no achievements to speak of (yet)!", Toast.LENGTH_LONG).show();
+        }
+    }
+
+    @Override
+    public boolean onChildClick(ExpandableListView expandableListView, View view, int i, int i1, long l) {
+        return false;
+    }
+
+    private class GetAchievements extends AsyncTask<Void, Void, List<Achievement>> {
+        protected List<Achievement> doInBackground(Void... voids) {
+            List<Achievement> achievements = new LinkedList<>();
+            while (!app.getEntityMapper().dataReady()) {
+                if (isCancelled()) break;
+            }
+            if (app.getEntityMapper().dataReady()) {
+                achievements = app.entityMapper.achievements;
+                app.getEntityMapper().dataGrabbed();
+            }
+            return achievements;
+        }
+
+        protected void onPostExecute(List<Achievement> achievements) {
+            displayData(achievements);
+        }
+    }
+
+    private class NavListener extends RunnerNavigationListener {
+        public NavListener(Context context) {
+            super(context);
+        }
+
+        @Override
+        public boolean onNavigationItemSelected(@NonNull MenuItem item) {
+            super.onNavigationItemSelected(item);
+            //finish();
+            startActivity(super.resultIntent);
+            drawer.closeDrawer(GravityCompat.START);
+            return true;
+        }
+    }
+}

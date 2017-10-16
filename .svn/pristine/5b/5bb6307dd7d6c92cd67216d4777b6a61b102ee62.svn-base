@@ -1,0 +1,108 @@
+package entity;
+
+import org.json.JSONException;
+import org.json.JSONObject;
+
+import java.sql.Date;
+import java.util.ArrayList;
+import java.util.List;
+
+/**
+ * Created by Giani-Luigi Driesen on 1/12/2016
+ */
+
+public class Training {
+    private int id;
+    private Date beginDateTime;
+    private Date endDateTime;
+    private double distance;
+    private String meetingPoint;
+
+    /** Empty constructor; only needed as a hack to get toString() methods to identify entity types */
+    public Training() {}
+
+    public Training(JSONObject obj) {
+        try {
+            this.id = obj.getInt("id");
+            if (obj.getString("distance").equals("null") || obj.getString("distance").equals("")) {
+                this.distance = 0.0;
+            } else {
+                this.distance = obj.getDouble("distance");
+            }
+            this.meetingPoint = obj.getString("meetingPoint").replace('_', ' ');
+            this.beginDateTime = Date.valueOf(obj.getString("beginDateTime"));
+            this.endDateTime = Date.valueOf(obj.getString("endDateTime"));
+        } catch (JSONException e) {
+            e.printStackTrace();
+        }
+    }
+
+    public Training(Date beginDateTime, Date endDateTime, int distance, String meetingPoint) {
+        this.beginDateTime = beginDateTime;
+        this.endDateTime = endDateTime;
+        this.distance = distance;
+        this.meetingPoint = meetingPoint;
+    }
+
+    public Training(int id, Date beginDateTime, Date endDateTime, int distance, String meetingPoint) {
+        this.id = id;
+        this.beginDateTime = beginDateTime;
+        this.endDateTime = endDateTime;
+        this.distance = distance;
+        this.meetingPoint = meetingPoint;
+    }
+
+    public int getId() {
+        return id;
+    }
+
+    public void setId(int id) {
+        this.id = id;
+    }
+
+    public Date getBeginDateTime() {
+        return beginDateTime;
+    }
+
+    public void setBeginDateTime(Date beginDateTime) {
+        this.beginDateTime = beginDateTime;
+    }
+
+    public Date getEndDateTime() {
+        return endDateTime;
+    }
+
+    public void setEndDateTime(Date endDateTime) {
+        this.endDateTime = endDateTime;
+    }
+
+    public double getDistance() {
+        return distance;
+    }
+
+    public void setDistance(double distance) {
+        this.distance = distance;
+    }
+
+    public String getMeetingPoint() {
+        return meetingPoint;
+    }
+
+    public void setMeetingPoint(String meetingPoint) {
+        this.meetingPoint = meetingPoint;
+    }
+
+    @Override
+    public String toString() {
+        return "Training";
+    }
+
+    public List<String> getExportableFields() {
+        List<String> fields = new ArrayList<>();
+        fields.add("Location: "+meetingPoint);
+        fields.add("Begins: "+beginDateTime.toString());
+        fields.add("Ends: "+endDateTime.toString());
+        fields.add("Distance: "+distance);
+        return fields;
+    }
+}

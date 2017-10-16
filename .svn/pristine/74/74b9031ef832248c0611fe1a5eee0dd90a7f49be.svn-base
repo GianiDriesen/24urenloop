@@ -1,0 +1,4 @@
+jdbc.driver=com.mysql.jdbc.Driver
+jdbc.url=jdbc:mysql://studev.groept.be:3306/a16_sd302
+jdbc.username=a16_sd302
+jdbc.password=piBZHN3Q

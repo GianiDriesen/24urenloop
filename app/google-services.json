@@ -1,0 +1,48 @@
+{
+  "project_info": {
+    "project_number": "901222791972",
+    "project_id": "industria24u"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:901222791972:android:1afb866f587b93f4",
+        "android_client_info": {
+          "package_name": "be.industria.industria24u.industria24u"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id":"901222791972-abmqbr2rora9stka119d0fefrpbesmut.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "be.industria.industria24u.industria24u",
+            "certificate_hash": "2A38E379319C4C7FC9A30DA31796B9BD9BF61601"
+          }
+        },
+        {
+          "client_id": "901222791972-abmqbr2rora9stka119d0fefrpbesmut.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyA-6CCnqWAoZ8Z_rgy702H_fOTxJVKpFSs"
+        }
+      ],
+      "services": {
+        "analytics_service": {
+          "status": 1
+        },
+        "appinvite_service": {
+          "status": 1,
+          "other_platform_oauth_client": []
+        },
+        "ads_service": {
+          "status": 1
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

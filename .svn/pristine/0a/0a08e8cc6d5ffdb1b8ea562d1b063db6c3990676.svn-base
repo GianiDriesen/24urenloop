@@ -1,0 +1,219 @@
+package be.industria.industria24u.industria24u;
+
+import android.content.Context;
+import android.content.Intent;
+import android.os.AsyncTask;
+import android.os.Bundle;
+import android.support.annotation.NonNull;
+import android.support.design.widget.NavigationView;
+import android.support.design.widget.Snackbar;
+import android.support.v4.view.GravityCompat;
+import android.support.v4.view.ViewPager;
+import android.support.v4.widget.DrawerLayout;
+import android.support.v7.app.ActionBarDrawerToggle;
+import android.support.v7.app.AppCompatActivity;
+import android.support.v7.widget.Toolbar;
+import android.view.LayoutInflater;
+import android.view.MenuItem;
+import android.view.View;
+import android.widget.Button;
+import android.widget.ExpandableListView;
+import android.widget.TextView;
+import android.widget.Toast;
+
+import java.util.ArrayList;
+import java.util.Calendar;
+import java.util.HashMap;
+import java.util.LinkedList;
+import java.util.List;
+
+import be.industria.industria24u.industria24u.navigation.RunnerNavigationListener;
+import entity.Person;
+import entity.Team;
+
+public class RunnerTeamsHasTeamActivity extends AppCompatActivity {
+    private SingletonApplication app;
+    private DrawerLayout drawer;
+    private ExpandableListView listViewTeam;
+    private List<Object> parentsTeam;
+    private HashMap<Object, List<String>> relationsTeam;
+    private List<Person> persons = new LinkedList<>();
+    private Team team = new Team();
+    private TextView teamName;
+    private TextView teamLeader;
+    private TextView placesLeft;
+    private Button addBtn;
+    private Intent intent;
+    private int year = Calendar.getInstance().get(Calendar.YEAR);
+
+
+    @Override
+    protected void onCreate(Bundle savedInstanceState) {
+        super.onCreate(savedInstanceState);
+        app = (SingletonApplication) this.getApplication();
+        setContentView(R.layout.runner_my_team_container);
+        setupViewHasTeam();
+        app.getEntityMapper().gettMapper().getTeamByPersonAndYear(app.getUser(),year);
+        new GetTeam().execute();
+    }
+
+    public void setupViewHasTeam() {
+
+
+        Toolbar toolbar = (Toolbar) findViewById(R.id.runner_my_team_toolbar);
+        if (getSupportActionBar() == null) {
+            setSupportActionBar(toolbar);
+        }
+
+        drawer = (DrawerLayout) findViewById(R.id.runner_my_team_container);
+        ActionBarDrawerToggle toggle = new ActionBarDrawerToggle(this, drawer, toolbar, R.string.navigation_drawer_open, R.string.navigation_drawer_close);
+        drawer.addDrawerListener(toggle);
+        toggle.syncState();
+
+        NavigationView navigationView = (NavigationView) findViewById(R.id.runner_my_team_nav);
+        navigationView.setNavigationItemSelectedListener(new NavListener(this.getApplicationContext()));
+
+        listViewTeam = (ExpandableListView) findViewById(R.id.runner_myteam_list);
+        parentsTeam = new ArrayList<>();
+        relationsTeam = new HashMap<>();
+
+        teamName = (TextView) findViewById(R.id.teamName_header);
+        teamLeader = (TextView) findViewById(R.id.teamleader_text);
+        placesLeft = (TextView) findViewById(R.id.placesLeft_subtitle);
+        addBtn = (Button) findViewById(R.id.addMember_btn);
+
+    }
+
+    public void setupList (List<Person> persons) {
+        if (!persons.isEmpty()) {
+            for (Person p:persons) {
+                List<String> fields = p.getExportableFieldsForQueue();
+                parentsTeam.add(p);
+                relationsTeam.put(p, fields);
+            }
+            ExpandableAdapter adapterTeam = new ExpandableAdapter(relationsTeam, parentsTeam);
+            adapterTeam.setInflater((LayoutInflater) getSystemService(Context.LAYOUT_INFLATER_SERVICE), this);
+            listViewTeam.setAdapter(adapterTeam);
+        } else {
+            Toast.makeText(app.getApplicationContext(), "There are no persons in the team", Toast.LENGTH_LONG).show();
+        }
+    }
+
+    public void leaveTeam(View v){
+        intent = new Intent(this, RunnerTeamsActivity.class);
+        if (app.getUser().getId() == team.getLeaderId()) {
+            Snackbar deleteSnack = Snackbar.make(findViewById(R.id.runner_content_my_team), "Are you sure you want to leave? Team will be deleted!", Snackbar.LENGTH_LONG);
+            deleteSnack.setAction(R.string.confirm, new DeleteListener());
+            deleteSnack.show();
+        }
+        else {
+            app.getEntityMapper().getTeamHasPersonMapper().deleteTeamHasPerson(app.getUser(),team);
+            startActivity(intent);
+        }
+    }
+
+    public void addMember(View v) {
+        intent = new Intent(this,RunnerTeamsAddMemberActivity.class);
+        startActivity(intent);
+        finish();
+    }
+
+    private class DeleteListener implements View.OnClickListener {
+        @Override
+        public void onClick(View v) {
+            app.getEntityMapper().gettMapper().deleteTeam(team);
+            startActivity(intent);
+            finish();
+            Toast.makeText(app.getApplicationContext(), "Team (and all it's members) succesfully deleted!", Toast.LENGTH_LONG).show();
+        }
+    }
+
+    private class NavListener extends RunnerNavigationListener {
+        public NavListener(Context context) {
+            super(context);
+        }
+
+        @Override
+        public boolean onNavigationItemSelected(@NonNull MenuItem item) {
+            super.onNavigationItemSelected(item);
+            //finish();
+            startActivity(super.resultIntent);
+            drawer.closeDrawer(GravityCompat.START);
+            return true;
+        }
+    }
+
+    private class GetTeam extends AsyncTask<Void, Void, Team> {
+        protected Team doInBackground(Void... voids) {
+            while (!app.getEntityMapper().dataReady()) {
+                if (isCancelled()) break;
+            }
+            if (app.getEntityMapper().dataReady()) {
+                team = app.getEntityMapper().team;
+                app.getEntityMapper().dataGrabbed();
+            }
+            return team;
+        }
+
+        protected void onPostExecute(Team team) {
+            teamName.setText("Welcome on "+team.getName()+"'s teampage!");
+            if (app.getUser().getId() != team.getLeaderId()) {
+                addBtn.setVisibility(View.GONE);
+            }
+            else {
+                addBtn.setVisibility(View.VISIBLE);
+            }
+            app.getEntityMapper().getpMapper().getPerson(team.getLeaderId());
+            new GetTeamleader().execute();
+            app.getEntityMapper().getpMapper().getPersonsByTeam(team);
+            new GetTeamMembers().execute();
+        }
+    }
+
+    private class GetTeamleader extends AsyncTask<Void, Void, Person> {
+        protected Person doInBackground(Void... voids) {
+            Person leader = new Person();
+            while (!app.getEntityMapper().dataReady()) {
+                if (isCancelled()) break;
+            }
+            if (app.getEntityMapper().dataReady()) {
+                leader = app.getEntityMapper().person;
+                app.getEntityMapper().dataGrabbed();
+            }
+            return leader;
+        }
+
+        protected void onPostExecute(Person leader) {
+            if (leader == null) {
+                app.getEntityMapper().getpMapper().getPerson(team.getLeaderId());
+                new GetTeamleader().execute();
+            }
+            else {
+                teamLeader.setText(""+leader.getFirstName()+" "+leader.getLastName());
+            }
+        }
+    }
+
+    private class GetTeamMembers extends AsyncTask<Void, Void, List<Person>> {
+        protected List<Person> doInBackground(Void... voids) {
+            while (!app.getEntityMapper().dataReady()) {
+                if (isCancelled()) break;
+            }
+            if (app.getEntityMapper().dataReady()) {
+                persons = app.entityMapper.persons;
+                app.getEntityMapper().dataGrabbed();
+            }
+            return persons;
+        }
+        protected void onPostExecute(List<Person> persons) {
+            if (persons.isEmpty()) {
+                app.getEntityMapper().getpMapper().getPersonsByTeam(team);
+                new GetTeamMembers().execute();
+            }
+            else {
+                placesLeft.setText("There are "+(6-persons.size())+"/6 places available!");
+                setupList(persons);
+            }
+        }
+    }
+}

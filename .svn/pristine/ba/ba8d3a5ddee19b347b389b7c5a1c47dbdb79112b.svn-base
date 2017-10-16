@@ -1,0 +1,174 @@
+package be.industria.industria24u.industria24u.editors;
+
+import android.content.Context;
+import android.content.Intent;
+import android.os.AsyncTask;
+import android.os.Bundle;
+import android.support.annotation.NonNull;
+import android.support.design.widget.NavigationView;
+import android.support.v4.view.GravityCompat;
+import android.support.v4.widget.DrawerLayout;
+import android.support.v7.app.ActionBarDrawerToggle;
+import android.support.v7.app.AppCompatActivity;
+import android.support.v7.widget.Toolbar;
+import android.view.MenuItem;
+import android.view.View;
+import android.widget.EditText;
+import android.widget.TextView;
+import android.widget.Toast;
+
+import java.util.Calendar;
+
+import be.industria.industria24u.industria24u.AdminTeamsActivity;
+import be.industria.industria24u.industria24u.R;
+import be.industria.industria24u.industria24u.RunnerDashboardActivity;
+import be.industria.industria24u.industria24u.SingletonApplication;
+import be.industria.industria24u.industria24u.navigation.AdminNavigationListener;
+import entity.Person;
+import entity.PersonType;
+import entity.Team;
+
+@SuppressWarnings("UnusedParameters")
+public class AdminTeamCreateActivity extends AppCompatActivity {
+    private SingletonApplication app;
+    private DrawerLayout drawer;
+    private EditText teamName;
+    private TextView year;
+    private EditText leaderEmail;
+    private Team newTeam = new Team();
+    private Person person = new Person();
+    private Intent intentAdmin;
+    private Intent intentRunner;
+
+    @Override
+    protected void onCreate(Bundle savedInstanceState) {
+        super.onCreate(savedInstanceState);
+        setContentView(R.layout.admin_team_create_container);
+        app = (SingletonApplication) this.getApplication();
+        setupViews();
+        intentAdmin = new Intent(this, AdminTeamsActivity.class);
+        intentRunner = new Intent(this, RunnerDashboardActivity.class);
+    }
+
+    private void setupViews() {
+        Toolbar toolbar = (Toolbar) findViewById(R.id.admin_team_create_toolbar);
+        if (getSupportActionBar() == null) {
+            setSupportActionBar(toolbar);
+        }
+
+        drawer = (DrawerLayout) findViewById(R.id.admin_team_create_container);
+        ActionBarDrawerToggle toggle = new ActionBarDrawerToggle(this, drawer, toolbar, R.string.navigation_drawer_open, R.string.navigation_drawer_close);
+        drawer.addDrawerListener(toggle);
+        toggle.syncState();
+
+        NavigationView navigationView = (NavigationView) findViewById(R.id.admin_team_create_nav);
+        navigationView.setNavigationItemSelectedListener(new NavListener(this.getApplicationContext()));
+
+        teamName = (EditText) findViewById(R.id.teamName);
+        year = (TextView) findViewById(R.id.year);
+        Calendar c = Calendar.getInstance();
+        System.out.println(c.get(Calendar.YEAR));
+        year.setText(String.valueOf(c.get(Calendar.YEAR)));
+        leaderEmail = (EditText) findViewById(R.id.leaderEmail);
+    }
+
+    public void insertTeam(View v) {
+        newTeam.setName(teamName.getText().toString());
+        newTeam.setYear(Integer.parseInt(year.getText().toString()));
+        if (!leaderEmail.getText().toString().equals("")) {
+            app.getEntityMapper().getpMapper().getPersonByEmail(leaderEmail.getText().toString());
+            new GetTeamLeader().execute();
+        } else {
+            Toast.makeText(app.getApplicationContext(), "Fill in an e-mail adress please! ", Toast.LENGTH_SHORT).show();
+        }
+    }
+
+    private class GetTeamLeader extends AsyncTask<Void, Void, Person> {
+        protected Person doInBackground(Void... voids) {
+            while (!app.getEntityMapper().dataReady()) {
+                if (isCancelled()) break;
+            }
+            if (app.getEntityMapper().dataReady()) {
+                person = app.getEntityMapper().person;
+                app.getEntityMapper().dataGrabbed(); // TODO: Check EVERY AsyncTask that gets data to make sure it sets dataGrabbed() afterwards.
+            }
+            return person;
+        }
+        protected void onPostExecute(Person person) {
+            if (!(person == null)) {
+                newTeam.setLeaderId(person.getId());
+                sendTeam();
+            } else {
+                Toast.makeText(app.getApplicationContext(), "Fill in a correct e-mail adress please! Person not found in database", Toast.LENGTH_SHORT).show();
+            }
+        }
+    }
+
+    private void sendTeam() {
+        app.getEntityMapper().dataSent();
+        app.getEntityMapper().gettMapper().insertTeam(newTeam);
+        new SendTeam().execute();
+    }
+
+    private class SendTeam extends AsyncTask<Void, Void, Team> {
+        protected Team doInBackground(Void... voids) {
+            while (!app.getEntityMapper().dataPushed()) {
+                if (isCancelled()) break;}
+            if (app.getEntityMapper().dataPushed()) {
+                app.getEntityMapper().dataSent();
+            }
+            return newTeam;
+        }
+
+        protected void onPostExecute(Team team) {
+            getNewestTeam();
+        }
+    }
+
+    private void getNewestTeam() {
+        app.getEntityMapper().gettMapper().getTeamNewest();
+        new GetTeam().execute();
+    }
+
+    private class GetTeam extends AsyncTask<Void, Void, Team> {
+        protected Team doInBackground(Void... voids) {
+            Team updatedTeam = new Team();
+            while (!app.getEntityMapper().dataReady()) {
+                if (isCancelled()) break;
+            }
+            if (app.getEntityMapper().dataReady()) {
+                updatedTeam = app.getEntityMapper().team;
+                app.getEntityMapper().dataGrabbed();
+            }
+            return updatedTeam;
+        }
+
+        protected void onPostExecute(Team updatedteam) {
+            System.out.println("datarecieved "+updatedteam);
+            app.getEntityMapper().getTeamHasPersonMapper().createTeamHasPerson(person, updatedteam);
+
+            if (app.getUser().getType() == PersonType.RUNNER) {
+                startActivity(intentRunner);
+            } else {
+                startActivity(intentAdmin);
+            }
+            finish();
+            Toast.makeText(app.getApplicationContext(), "Created team " + updatedteam.getName(), Toast.LENGTH_SHORT).show();
+
+        }
+
+    }
+
+
+    private class NavListener extends AdminNavigationListener {
+        public NavListener(Context context) { super(context); }
+        @Override
+        public boolean onNavigationItemSelected(@NonNull MenuItem item) {
+            super.onNavigationItemSelected(item);
+            //finish();
+            startActivity(super.resultIntent);
+            drawer.closeDrawer(GravityCompat.START);
+            return true;
+        }
+    }
+}

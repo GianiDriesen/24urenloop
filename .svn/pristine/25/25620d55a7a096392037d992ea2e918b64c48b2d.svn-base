@@ -1,0 +1,122 @@
+package mapper;
+
+import entity.Person;
+import entity.Team;
+
+/**
+ * Singleton design pattern: map Team entities to-and-from the database.
+ * Created on on 04/12/2016.
+ * @version 1.1 21/12/2016
+ * @author Koen Van Kerckhoven
+ * @author Giani-Luigi Driesen
+ */
+public enum TeamMapper {
+    UNIQUEMAPPER;
+
+    private Team team = new Team();
+    private EntityMapper eMapper;
+    private final MapperConstants mc = MapperConstants.FINALCONSTANTS;
+
+    /**
+     * Use only one entity mapper for all mappers
+     * @param entityMapper Applying the singleton design
+     */
+    public void setEntityMapper(EntityMapper entityMapper) {
+        this.eMapper = entityMapper;
+    }
+
+    /**
+     * Get a Team object by its id
+     * @param id The id of the Team to be found
+     */
+    public void getTeam(int id) {
+        String url = mc.BASE_URL+mc.SELECT+mc.TABLE_TEAM+"/"+id;
+        eMapper.queryEntity(team, url);
+    }
+
+    /**
+     * Get Team objects by a runner that's on that team
+     * @param person The person that is a part of the Teams to be found
+     */
+    public void getTeamsByPerson(Person person) {
+        String url = mc.BASE_URL+mc.SELECT+mc.TABLE_TEAM+mc.MULTIPLE+mc.BY+mc.TABLE_PERSON+"/"+person.getId();
+        eMapper.queryEntities(team, url);
+    }
+
+    public void getTeamByPersonAndYear(Person person, int year) {
+        String url = mc.BASE_URL+mc.SELECT+mc.TABLE_TEAM+mc.BY+mc.TABLE_PERSON+mc.AND+mc.YEAR+"/"+person.getId()+"/"+year;
+        System.out.println(url);
+        eMapper.queryEntity(team,url);
+    }
+
+    /**
+     * Get all team objects
+     */
+    public void getTeams() {
+        String url = mc.BASE_URL+mc.SELECT+mc.TABLE_TEAM+mc.MULTIPLE;
+        eMapper.queryEntities(team, url);
+    }
+
+    /**
+     * Get a team object by its name and year
+     * @param name The team name
+     * @param year The year of the Team to be found
+     */
+    public void getTeamByNameAndYear(String name, int year) {
+        String url = mc.BASE_URL+mc.SELECT+mc.TABLE_TEAM+mc.BY+mc.NAME+mc.AND+mc.YEAR+"/"+name+"/"+year;
+        eMapper.queryEntity(team, url);
+    }
+
+    /**
+     * Get newest team object
+     */
+    public void getTeamNewest() {
+        String url = mc.BASE_URL+mc.SELECT+mc.TABLE_TEAM+mc.NEWEST;
+        System.out.println(url);
+        eMapper.queryEntity(team, url);
+    }
+
+    /**
+     * Get all team objects in a certain year
+     * @param year The year of the teams
+     */
+    public void getTeamsByYear(int year) {
+        String url = mc.BASE_URL+mc.SELECT+mc.TABLE_TEAM+mc.MULTIPLE+mc.BY+mc.YEAR+"/"+year;
+        eMapper.queryEntities(team, url);
+    }
+
+    /**
+     * Store a team in the database
+     * @param team The Team object that needs to be stored
+     */
+    public void insertTeam(Team team) {
+        String url = mc.BASE_URL+mc.INSERT+mc.TABLE_TEAM+"/"+team.getName()+"/"+team.getYear()+"/"+team.getLeaderId();
+        eMapper.queryAnswerless(url);
+
+    }
+
+    /**
+     * Update all columns of a Team in the database
+     * @param team The Team object with the new data
+     */
+    public void updateTeam(Team team) {
+        String url = mc.BASE_URL+mc.UPDATE+mc.TABLE_TEAM+"/"+team.getName()+"/"+team.getYear()+"/"+team.getLeaderId()+"/"+team.getId();
+        eMapper.queryAnswerless(url);
+    }
+
+    /**
+     * Delete a team from the database
+     * @param team The Team to be deleted
+     */
+    public void deleteTeam(Team team) {
+        String url = mc.BASE_URL+mc.DELETE+mc.TABLE_TEAM+"/"+team.getId();
+        eMapper.queryAnswerless(url);
+        // If a team is deleted, all related rows in team_has_xxx need to be deleted as well.
+        deleteTeamRows(team);
+    }
+
+    private void deleteTeamRows(Team team) {
+        eMapper.getaMapper().deleteAchievementsByTeam(team);
+        eMapper.getpMapper().deletePersonsByTeam(team);
+    }
+}

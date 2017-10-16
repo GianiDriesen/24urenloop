@@ -1,0 +1,206 @@
+<?xml version="1.0" encoding="utf-8"?>
+<RelativeLayout
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:id="@+id/admin_prize_edit_content"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    app:layout_behavior="@string/appbar_scrolling_view_behavior"
+    tools:context="be.industria.industria24u.industria24u.editors.AdminPrizeEditActivity"
+    tools:showIn="@layout/admin_prize_edit_container">
+    <android.support.v4.view.ViewPager
+        android:id="@+id/container"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        app:layout_behavior="@string/appbar_scrolling_view_behavior" />
+    <LinearLayout
+        android:orientation="vertical"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent">
+        <LinearLayout
+            android:orientation="horizontal"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content">
+            <Space
+                android:layout_width="match_parent"
+                android:layout_height="match_parent"
+                android:layout_weight="1" />
+            <TextView
+                android:text="@string/fill_info"
+                android:layout_width="wrap_content"
+                android:layout_height="38dp"
+                android:textAppearance="@style/TextAppearance.AppCompat.Large"
+                android:textColor="@android:color/holo_red_light"
+                android:translationY="8dp"
+                android:textStyle="normal|bold"
+                android:textAlignment="center" />
+            <Space
+                android:layout_width="match_parent"
+                android:layout_height="match_parent"
+                android:layout_weight="1" />
+        </LinearLayout>
+        <LinearLayout
+            android:orientation="horizontal"
+            android:layout_width="match_parent"
+            android:layout_height="38dp"
+            android:weightSum="1">
+            <TextView
+                android:text="@string/name"
+                android:layout_height="match_parent"
+                android:translationX="15dp"
+                android:translationY="10dp"
+                android:layout_width="120dp"
+                android:textAppearance="@style/TextAppearance.AppCompat"
+                android:textAlignment="center" />
+            <EditText
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:ems="10"
+                android:id="@+id/prizeName"
+                android:textSize="14sp"
+                android:layout_weight="1"
+                android:inputType="textPersonName"/>
+        </LinearLayout>
+        <LinearLayout
+            android:orientation="horizontal"
+            android:layout_width="match_parent"
+            android:layout_height="38dp">
+            <TextView
+                android:text="@string/description"
+                android:layout_height="match_parent"
+                android:translationX="15dp"
+                android:translationY="10dp"
+                android:layout_width="120dp"
+                android:textAppearance="@style/TextAppearance.AppCompat"
+                android:textAlignment="center" />
+            <EditText
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:inputType="text"
+                android:ems="10"
+                android:id="@+id/prizeDescription"
+                android:layout_weight="1"
+                android:textSize="14sp"/>
+        </LinearLayout>
+        <LinearLayout
+            android:orientation="horizontal"
+            android:layout_width="match_parent"
+            android:layout_height="38dp">
+            <TextView
+                android:text="@string/year"
+                android:layout_height="match_parent"
+                android:translationX="15dp"
+                android:translationY="10dp"
+                android:layout_width="120dp"
+                android:textAppearance="@style/TextAppearance.AppCompat"
+                android:textAlignment="center" />
+            <EditText
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:ems="10"
+                android:id="@+id/year"
+                android:layout_weight="1"
+                android:textSize="14sp"
+                android:inputType="number"/>
+        </LinearLayout>
+        <LinearLayout
+            android:orientation="horizontal"
+            android:layout_width="match_parent"
+            android:layout_height="38dp">
+            <TextView
+                android:text="@string/point_cost"
+                android:layout_height="match_parent"
+                android:translationX="15dp"
+                android:translationY="10dp"
+                android:layout_width="120dp"
+                android:textAppearance="@style/TextAppearance.AppCompat"
+                android:textAlignment="center" />
+            <EditText
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:ems="10"
+                android:id="@+id/pointCost"
+                android:layout_weight="1"
+                android:textSize="14sp"
+                android:inputType="number"/>
+        </LinearLayout>
+        <LinearLayout
+            android:orientation="horizontal"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content">
+            <Space
+                android:layout_width="match_parent"
+                android:layout_height="match_parent"
+                android:layout_weight="1" />
+            <Button
+                android:text="@string/confirm"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:id="@+id/confirmButton"
+                android:textAlignment="center"
+                android:layout_weight="1"
+                android:onClick="updatePrize" />
+            <Space
+                android:layout_width="match_parent"
+                android:layout_height="match_parent"
+                android:layout_weight="1" />
+        </LinearLayout>
+
+        <LinearLayout
+            android:orientation="horizontal"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content">
+
+            <Space
+                android:layout_width="match_parent"
+                android:layout_height="match_parent"
+                android:layout_weight="1" />
+
+            <TextView
+                android:text="People coming for this prize:"
+                android:layout_width="wrap_content"
+                android:layout_height="38dp"
+                android:textAppearance="@style/TextAppearance.AppCompat.Medium"
+                android:translationY="8dp" />
+
+            <Space
+                android:layout_width="match_parent"
+                android:layout_height="match_parent"
+                android:layout_weight="1" />
+        </LinearLayout>
+
+        <ExpandableListView
+            android:id="@+id/admin_notGiven_list"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content" />
+
+        <LinearLayout
+            android:orientation="horizontal"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content">
+
+            <Space
+                android:layout_width="match_parent"
+                android:layout_height="match_parent"
+                android:layout_weight="1" />
+
+            <TextView
+                android:text="People having this prize:"
+                android:layout_width="wrap_content"
+                android:layout_height="38dp"
+                android:textAppearance="@style/TextAppearance.AppCompat.Medium"
+                android:translationY="8dp" />
+
+            <Space
+                android:layout_width="match_parent"
+                android:layout_height="match_parent"
+                android:layout_weight="1" />
+        </LinearLayout>
+
+        <ExpandableListView
+            android:id="@+id/admin_Given_list"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content" />
+    </LinearLayout>
+</RelativeLayout>

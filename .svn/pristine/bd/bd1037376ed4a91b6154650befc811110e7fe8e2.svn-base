@@ -1,0 +1,120 @@
+package be.industria.industria24u.industria24u.editors;
+
+import android.content.Context;
+import android.content.Intent;
+import android.os.Bundle;
+import android.support.annotation.NonNull;
+import android.support.design.widget.NavigationView;
+import android.support.v4.view.GravityCompat;
+import android.support.v4.widget.DrawerLayout;
+import android.support.v7.app.ActionBarDrawerToggle;
+import android.support.v7.app.AppCompatActivity;
+import android.support.v7.widget.Toolbar;
+import android.view.MenuItem;
+import android.view.View;
+import android.widget.EditText;
+import android.widget.Toast;
+import java.sql.Date;
+
+import be.industria.industria24u.industria24u.AdminRunnersActivity;
+import be.industria.industria24u.industria24u.R;
+import be.industria.industria24u.industria24u.SingletonApplication;
+import be.industria.industria24u.industria24u.navigation.AdminNavigationListener;
+import entity.Person;
+
+@SuppressWarnings({"deprecation", "UnusedParameters"})
+public class AdminRunnerEditActivity extends AppCompatActivity {
+    private SingletonApplication app;
+    private DrawerLayout drawer;
+    private EditText firstName;
+    private EditText lastName;
+    private EditText phoneNumber;
+    private EditText email;
+    private EditText birthDay;
+    private EditText birthMonth;
+    private EditText birthYear;
+    private Person person;
+
+    @Override
+    protected void onCreate(Bundle savedInstanceState) {
+        super.onCreate(savedInstanceState);
+        setContentView(R.layout.admin_runner_edit_container);
+        app = (SingletonApplication) this.getApplication();
+        setupViews();
+        prefillContent();
+    }
+
+    private void setupViews() {
+        Toolbar toolbar = (Toolbar) findViewById(R.id.admin_runner_edit_toolbar);
+        if (getSupportActionBar() == null) {
+            setSupportActionBar(toolbar);
+        }
+
+        drawer = (DrawerLayout) findViewById(R.id.admin_runner_edit_container);
+        ActionBarDrawerToggle toggle = new ActionBarDrawerToggle(this, drawer, toolbar, R.string.navigation_drawer_open, R.string.navigation_drawer_close);
+        drawer.addDrawerListener(toggle);
+        toggle.syncState();
+
+        NavigationView navigationView = (NavigationView) findViewById(R.id.admin_runner_edit_nav);
+        navigationView.setNavigationItemSelectedListener(new NavListener(this.getApplicationContext()));
+
+        firstName = (EditText) findViewById(R.id.firstName);
+        lastName  = (EditText) findViewById(R.id.lastName);
+        phoneNumber = (EditText) findViewById(R.id.phoneNumber);
+        email = (EditText) findViewById(R.id.email);
+        birthDay = (EditText) findViewById(R.id.birthDay);
+        birthMonth = (EditText) findViewById(R.id.birthMonth);
+        birthYear = (EditText) findViewById(R.id.birthYear);
+    }
+
+    private void prefillContent() {
+        person = app.tmpPerson;
+        firstName.setText(person.getFirstName());
+        lastName.setText(person.getLastName());
+        email.setText(person.geteMail());
+        if (person.getPhoneNumber() != null && !person.getPhoneNumber().equals("null")) {
+            phoneNumber.setText(person.getPhoneNumber());
+        } else {
+            phoneNumber.setText("");
+        }
+        birthDay.setText(String.valueOf(person.getBirthDate().getDate()));
+        int month = person.getBirthDate().getMonth()+1;
+        birthMonth.setText(String.valueOf(month));
+        int year = person.getBirthDate().getYear()+1900;
+        birthYear.setText(String.valueOf(year));
+    }
+
+    public void updateRunner(View v) {
+        person.setFirstName(firstName.getText().toString());
+        person.setLastName(lastName.getText().toString());
+        person.seteMail(email.getText().toString());
+        person.setPhoneNumber(phoneNumber.getText().toString());
+
+        Date birthDate = person.getBirthDate();
+        birthDate.setDate(Integer.parseInt(birthDay.getText().toString()));
+        birthDate.setMonth(Integer.parseInt(birthMonth.getText().toString())-1);
+        birthDate.setYear(Integer.parseInt(birthYear.getText().toString())-1900);
+        person.setBirthDate(birthDate);
+        app.getEntityMapper().getpMapper().updatePerson(person);
+        app.getEntityMapper().getpMapper().updatePersonPhone(person);
+        Intent intent = new Intent(this, AdminRunnersActivity.class);
+        startActivity(intent);
+        finish();
+        Toast.makeText(app.getApplicationContext(), "Updated "+person.getFirstName()+" "+person.getLastName(), Toast.LENGTH_SHORT).show();
+    }
+
+    private class NavListener extends AdminNavigationListener {
+        public NavListener(Context context) {
+            super(context);
+        }
+
+        @Override
+        public boolean onNavigationItemSelected(@NonNull MenuItem item) {
+            super.onNavigationItemSelected(item);
+            //finish();
+            startActivity(super.resultIntent);
+            drawer.closeDrawer(GravityCompat.START);
+            return true;
+        }
+    }
+}

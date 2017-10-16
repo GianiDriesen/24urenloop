@@ -1,0 +1,254 @@
+package be.industria.industria24u.industria24u;
+
+import android.content.Context;
+import android.content.Intent;
+import android.os.AsyncTask;
+import android.os.Bundle;
+import android.support.annotation.NonNull;
+import android.support.design.widget.NavigationView;
+import android.support.v4.view.GravityCompat;
+import android.support.v4.widget.DrawerLayout;
+import android.support.v7.app.ActionBarDrawerToggle;
+import android.support.v7.app.AppCompatActivity;
+import android.support.v7.widget.Toolbar;
+import android.view.LayoutInflater;
+import android.view.MenuItem;
+import android.view.View;
+import android.widget.ExpandableListView;
+import android.widget.ExpandableListView.OnChildClickListener;
+import android.widget.TextView;
+import android.widget.Toast;
+
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.LinkedList;
+import java.util.List;
+
+import be.industria.industria24u.industria24u.navigation.RunnerNavigationListener;
+import entity.Lap;
+import entity.Person_has_prize;
+import entity.Prize;
+
+@SuppressWarnings("UnusedParameters")
+public class RunnerPrizesActivity extends AppCompatActivity implements OnChildClickListener {
+    private SingletonApplication app;
+    private DrawerLayout drawer;
+    private ExpandableListView listViewEarned;
+    private List<Object> parentsEarned;
+    private HashMap<Object, List<String>> relationsEarned;
+    private ExpandableListView listViewRecieved;
+    private List<Object> parentsRecieved;
+    private HashMap<Object, List<String>> relationsRecieved;
+    private TextView lapsRan;
+    private int points;
+    private List<Prize> prizesRunner = new LinkedList<>();
+    private List<Prize> prizesAll = new LinkedList<>();
+    private List<Person_has_prize> personPrizes = new LinkedList<>();
+
+    @Override
+    protected void onCreate(Bundle savedInstanceState) {
+        super.onCreate(savedInstanceState);
+        setContentView(R.layout.runner_prizes_container);
+        app = (SingletonApplication) this.getApplication();
+        setupViews();
+
+        app.getEntityMapper().getPersonHasPrizeMapper().getPerson_has_prizesByPerson(app.getUser());
+        new GetPerson_has_prizes().execute();
+    }
+
+    private void setupViews() {
+        Toolbar toolbar = (Toolbar) findViewById(R.id.runner_prizes_toolbar);
+        if (getSupportActionBar() == null) {
+            setSupportActionBar(toolbar);
+        }
+
+        drawer = (DrawerLayout) findViewById(R.id.runner_prizes_container);
+        ActionBarDrawerToggle toggle = new ActionBarDrawerToggle(this, drawer, toolbar, R.string.navigation_drawer_open, R.string.navigation_drawer_close);
+        drawer.addDrawerListener(toggle);
+        toggle.syncState();
+
+        NavigationView navigationView = (NavigationView) findViewById(R.id.runner_prizes_nav);
+        navigationView.setNavigationItemSelectedListener(new NavListener(this.getApplicationContext()));
+
+        listViewEarned = (ExpandableListView) findViewById(R.id.runner_prizes_earned_list);
+        listViewEarned.setGroupIndicator(null);
+        listViewRecieved = (ExpandableListView) findViewById(R.id.runner_prizes_recieved_list);
+        listViewRecieved.setGroupIndicator(null);
+
+        parentsEarned = new ArrayList<>();
+        relationsEarned = new HashMap<>();
+        parentsRecieved = new ArrayList<>();
+        relationsRecieved = new HashMap<>();
+
+        lapsRan = (TextView) findViewById(R.id.lapsRan);
+    }
+
+    private void displayData(List<Prize> prizes) {
+        List<Integer> recievedIDs = new LinkedList<>();
+        if (!prizes.isEmpty() || !personPrizes.isEmpty()) {
+            for (Person_has_prize p:personPrizes){
+                if (p.getIsRecieved()==1){
+                    recievedIDs.add(p.getPrize_id());
+                }
+            }
+            for (Prize p:prizes) {
+                List<String> fields = p.getExportableFields();
+                if (!recievedIDs.contains(p.getId())) {
+                    parentsEarned.add(p);
+                    relationsEarned.put(p, fields);
+                }
+                else {
+                    parentsRecieved.add(p);
+                    relationsRecieved.put(p,fields);
+                }
+            }
+            ExpandableAdapter adapterEarned = new ExpandableAdapter(relationsEarned, parentsEarned);
+            adapterEarned.setInflater((LayoutInflater) getSystemService(Context.LAYOUT_INFLATER_SERVICE), this);
+            listViewEarned.setAdapter(adapterEarned);
+            listViewEarned.setOnChildClickListener(this);
+            ExpandableAdapter adapterRecieved = new ExpandableAdapter(relationsRecieved, parentsRecieved);
+            adapterRecieved.setInflater((LayoutInflater) getSystemService(Context.LAYOUT_INFLATER_SERVICE), this);
+            listViewRecieved.setAdapter(adapterRecieved);
+            listViewRecieved.setOnChildClickListener(this);
+        } else {
+            Toast.makeText(app.getApplicationContext(), "You have no prizes to speak of (yet)!", Toast.LENGTH_SHORT).show();
+            Toast.makeText(app.getApplicationContext(), "Update or run some laps for a prize!", Toast.LENGTH_SHORT).show();
+        }
+    }
+
+    public void refresh(View view) {
+        calculatePrizes();
+        Toast.makeText(app.getApplicationContext(), "This might take a while, calculating your Prizes...", Toast.LENGTH_SHORT).show();
+    }
+
+    private void calculatePrizes() {
+        // Look for prizes not yet registered in person_has_prize and restart activity afterwards
+        // 1. Get all prizes of the person (= global 'prizesRunner')
+        // 2. Get all prizes
+        app.getEntityMapper().getPrizeMapper().getPrizes();
+        new GetAllPrizes().execute();
+        // 3. See if there are prizes in prizesAll that should be added to 'prizesRunner'
+            //3.1. delete in prizesAll the ones runner already has + the ones wherefore insufficient points.
+            //3.2 If empty, set Toast, else add all elements of toUpdate
+    }
+
+    private void addPersonHasPrize(List<Prize> prizes) {
+        List<Prize> toUpdate = new LinkedList<>();
+        for (Prize p : prizes) {
+            //3.1. delete in prizesAll the ones runner already has + the ones wherefore insufficient points.
+            if (!prizesRunner.contains(p) && p.getPointCost()<= points) {
+                toUpdate.add(p);
+            }
+        }
+        //3.2 If empty, set Toast, else add all elements of toUpdate
+        if (toUpdate.isEmpty()) {
+            Toast.makeText(app.getApplicationContext(), "Nothing had to be updated, sorry.", Toast.LENGTH_SHORT).show();
+        }
+        else {
+            for (Prize p : toUpdate) {
+                app.getEntityMapper().getPersonHasPrizeMapper().createPersonHasPrize(app.getUser(), p);
+            }
+            Intent intent = new Intent(this,RunnerPrizesActivity.class);
+            startActivity(intent);
+            finish();
+            Toast.makeText(app.getApplicationContext(), "Updated", Toast.LENGTH_SHORT).show();
+        }
+    }
+
+    @Override
+    public boolean onChildClick(ExpandableListView expandableListView, View view, int i, int i1, long l) {
+        return false;
+    }
+
+    private class GetPerson_has_prizes extends AsyncTask<Void, Void, List<Person_has_prize>> {
+        protected List<Person_has_prize> doInBackground(Void... voids) {
+            while (!app.getEntityMapper().dataReady()) {
+                if (isCancelled()) break;
+            }
+            if (app.getEntityMapper().dataReady()) {
+                personPrizes = app.entityMapper.person_has_prizes;
+                app.getEntityMapper().dataGrabbed();
+            }
+            return personPrizes;
+        }
+
+        protected void onPostExecute(List<Person_has_prize> personPrizes) {
+            app.getEntityMapper().getPrizeMapper().getPrizesByPerson(app.getUser()); // Get all prizes for this user
+            new GetPrizes().execute();
+        }
+    }
+
+    private class GetPrizes extends AsyncTask<Void, Void, List<Prize>> {
+        protected List<Prize> doInBackground(Void... voids) {
+            while (!app.getEntityMapper().dataReady()) {
+                if (isCancelled()) break;
+            }
+            if (app.getEntityMapper().dataReady()) {
+                prizesRunner = app.entityMapper.prizes;
+                app.getEntityMapper().dataGrabbed();
+            }
+            return prizesRunner;
+        }
+
+        protected void onPostExecute(List<Prize> prizes) {
+            app.getEntityMapper().getlMapper().getLapsByPerson(app.getUser()); // Get all laps ran by this user
+            new GetLaps().execute();
+        }
+    }
+
+    private class GetLaps extends AsyncTask<Void, Void, List<Lap>> {
+        protected List<Lap> doInBackground(Void... voids) {
+            List<Lap> laps = new LinkedList<>();
+            while (!app.getEntityMapper().dataReady()) {
+                if (isCancelled()) break;
+            }
+            if (app.getEntityMapper().dataReady()) {
+                laps = app.entityMapper.laps;
+                app.getEntityMapper().dataGrabbed();
+            }
+            return laps;
+        }
+
+        protected void onPostExecute(List<Lap> laps) {
+            displayData(prizesRunner);
+            points = laps.size();
+            String txt = getString(R.string.laps_ran)+points;
+            lapsRan.setText(txt);
+        }
+    }
+
+    private class GetAllPrizes extends AsyncTask<Void, Void, List<Prize>> {
+        protected List<Prize> doInBackground(Void... voids) {
+            while (!app.getEntityMapper().dataReady()) {
+                if (isCancelled()) break;
+            }
+            if (app.getEntityMapper().dataReady()) {
+                prizesAll = app.entityMapper.prizes;
+                app.getEntityMapper().dataGrabbed();
+            }
+            return prizesAll;
+        }
+
+        protected void onPostExecute(List<Prize> prizes) {
+            // 3. See if there are prizes in prizesAll that should be added to 'prizesRunner'
+            addPersonHasPrize(prizes);
+        }
+    }
+
+
+
+    private class NavListener extends RunnerNavigationListener {
+        public NavListener(Context context) {
+            super(context);
+        }
+
+        @Override
+        public boolean onNavigationItemSelected(@NonNull MenuItem item) {
+            super.onNavigationItemSelected(item);
+            //finish();
+            startActivity(super.resultIntent);
+            drawer.closeDrawer(GravityCompat.START);
+            return true;
+        }
+    }
+}
